@@ -174,49 +174,94 @@ export default {
         }
       }
     },
-    setDataList(dataList, firstKey, secondKeys, _this) {
+    generateGroupKey(item, keys) {
+      return keys?.map((k) => item[k]).join('|')
+    },
+
+    // 按键分组：根据生成的键将数据分组
+    // 示例输入: items = [{id: 1, type: 'A'}, {id: 2, type: 'A'}, {id: 3, type: 'B'}]
+    // 示例输出: { 'A': [{id: 1, type: 'A'}, {id: 2, type: 'A'}], 'B': [{id: 3, type: 'B'}] }
+    groupByKey(items, keyGenerator) {
+      const groups = {}
+      items.forEach((item) => {
+        const key = keyGenerator(item)
+        if (!groups[key]) {
+          groups[key] = []
+        }
+        groups[key].push(item)
+      })
+      return groups
+    },
+
+    /**
+     * 设置数据列表的行合并信息
+     * @param {Array} dataList - 原始数据列表
+     * @param {Object} options - 配置选项
+     * @param {string} options.firstKey - 第一级分组键
+     * @param {Array} options.secondKeys - 第二级分组键数组
+     * @param {Array} options.thirdKeys - 第三级分组键数组
+     * @param {Object} _this - Vue 组件实例，用于获取分页信息
+     *
+     * 示例输入:
+     * dataList = [
+     *   { department: 'IT', position: 'dev', level: 'senior', name: 'John' },
+     *   { department: 'IT', position: 'dev', level: 'senior', name: 'Mike' },
+     *   { department: 'IT', position: 'qa', level: 'junior', name: 'Tom' }
+     * ]
+     * options = {
+     *   firstKey: 'department',
+     *   secondKeys: ['position', 'level'],
+     *   thirdKeys: ['name']
+     * }
+     *
+     * 示例输出:
+     * [
+     *   { department: 'IT', position: 'dev', level: 'senior', name: 'John', rowSpan: 3, secondRowSpan: 2, thirdRowSpan: 1, no: 1 },
+     *   { department: 'IT', position: 'dev', level: 'senior', name: 'Mike', rowSpan: 0, secondRowSpan: 0, thirdRowSpan: 1, no: 0 },
+     *   { department: 'IT', position: 'qa', level: 'junior', name: 'Tom', rowSpan: 0, secondRowSpan: 1, thirdRowSpan: 1, no: 0 }
+     * ]
+     */
+    setDataList(dataList, { firstKey, secondKeys, thirdKeys }, _this) {
       const result = []
       let no = (_this.currentPage - 1) * _this.pageSize + 1
 
-      // 生成二级合并的唯一键
-      const generateSecondaryKey = (item) =>
-        secondKeys.map((k) => item[k]).join('|')
+      // 一级分组：按 firstKey 分组
+      const firstGroups = groupByKey(dataList, (item) => item[firstKey])
 
-      // 按 firstKey 分组
-      const groupedByFirst = {}
-      dataList.forEach((item) => {
-        const firstKeyValue = item[firstKey]
-        if (!groupedByFirst[firstKeyValue]) {
-          groupedByFirst[firstKeyValue] = []
-        }
-        groupedByFirst[firstKeyValue].push(item)
-      })
-
-      // 处理每个 firstKey 组å
-      Object.values(groupedByFirst).forEach((group) => {
-        const secondaryGroups = {}
-
-        // 在 firstKey 组内进行二级分组
-        group.forEach((item) => {
-          const secondaryKey = generateSecondaryKey(item)
-          if (!secondaryGroups[secondaryKey]) {
-            secondaryGroups[secondaryKey] = []
-          }
-          secondaryGroups[secondaryKey].push(item)
-        })
-
-        // 处理每个二级分组
+      Object.values(firstGroups).forEach((group) => {
+        // 二级分组：按 secondKeys 组合分组
+        const secondGroups = groupByKey(group, (item) =>
+          generateGroupKey(item, secondKeys)
+        )
         let isFirstInGroup = true
-        Object.values(secondaryGroups).forEach((secondaryGroup) => {
-          secondaryGroup.forEach((item, index) => {
-            const newItem = {
+
+        Object.values(secondGroups).forEach((secondGroup) => {
+          // 三级分组：如果有 thirdKeys，则按 thirdKeys 组合分组
+          let thirdGroups = null
+          if (thirdKeys?.length) {
+            thirdGroups = groupByKey(secondGroup, (item) =>
+              generateGroupKey(item, thirdKeys)
+            )
+          }
+
+          secondGroup.forEach((item, index) => {
+            // 计算三级分组的行数
+            let thirdRowSpan = 0
+            if (thirdGroups && index === 0) {
+              const thirdKey = generateGroupKey(item, thirdKeys)
+              thirdRowSpan = thirdGroups[thirdKey].length
+            }
+
+            // 构建结果项
+            result.push({
               ...item,
               rowSpan: isFirstInGroup ? group.length : 0,
-              secondRowSpan: index === 0 ? secondaryGroup.length : 0,
+              secondRowSpan: index === 0 ? secondGroup.length : 0,
+              thirdRowSpan,
               no: isFirstInGroup ? no : 0,
-            }
-            result.push(newItem)
+            })
 
+            // 更新首项标记和序号
             if (isFirstInGroup) {
               no++
               isFirstInGroup = false
