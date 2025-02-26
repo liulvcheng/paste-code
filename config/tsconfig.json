@@ -1,0 +1,41 @@
+{
+  "compilerOptions": {
+    /* 基础配置 */
+    "target": "ES2020",              // 编译目标为现代 JavaScript (ES2020)
+    "module": "ES2020",              // 使用 ES 模块规范
+    "moduleResolution": "node16",    // 推荐使用 Node.js 风格的模块解析
+    "baseUrl": ".",                  // 基础目录（配合 paths 使用）
+    "outDir": "./dist",              // 输出目录
+    "rootDir": "./src",              // 源码目录
+    "declaration": true,             // 生成 .d.ts 声明文件（库开发必备）
+
+    /* 严格类型检查 */
+    "strict": true,                  // 启用所有严格类型检查选项
+    "noImplicitAny": true,           // 禁止隐式的 any 类型
+    "strictNullChecks": true,        // 严格的 null/undefined 检查
+    "strictFunctionTypes": true,     // 严格检查函数类型
+    "strictBindCallApply": true,     // 严格检查 bind/call/apply 参数
+    "strictPropertyInitialization": true, // 类属性必须初始化
+    "noUncheckedIndexedAccess": true,// 索引访问自动包含 undefined 类型
+
+    /* 代码质量检查 */
+    "noUnusedLocals": true,          // 禁止未使用的局部变量
+    "noUnusedParameters": true,      // 禁止未使用的函数参数
+    "exactOptionalPropertyTypes": true, // 可选属性不能设为 undefined
+    "noImplicitOverride": true,      // 禁止隐式覆盖父类方法
+    "noFallthroughCasesInSwitch": true, // 禁止 switch case 穿透
+
+    /* 模块解析 */
+    "esModuleInterop": true,         // 兼容 CommonJS/ES 模块系统
+    "forceConsistentCasingInFileNames": true, // 强制文件名大小写一致
+    "allowImportingTsExtensions": true, // 允许导入 .ts 扩展名
+    "verbatimModuleSyntax": true,    // 保留未转换的模块语法
+
+    /* 其他优化 */
+    "skipLibCheck": true,            // 跳过声明文件类型检查（加快编译）
+    "allowJs": true,                 // 允许编译 JS 文件（渐进式迁移项目有用）
+    "moduleDetection": "force",      // 强制识别 ES 模块
+  },
+  "include": ["src/**/*"],           // 包含的源码路径
+  "exclude": ["node_modules", "dist", "**/*.test.ts"] // 排除目录
+}
